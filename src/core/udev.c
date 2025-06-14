@@ -80,17 +80,17 @@ void *ndm_udev_thread_usb(void *arg) {
                     }
 
                     const char *devtype = udev_device_get_devtype(dev);
+                    const char *fs_type =
+                        udev_device_get_property_value(dev, "ID_FS_TYPE");
+
                     if (!devtype || strcmp(devtype, "partition") != 0) {
                         udev_device_unref(dev);
                         continue;
                     }
 
-                    const char *fs_type =
-                        udev_device_get_property_value(dev, "ID_FS_TYPE");
-
                     if (!fs_type) {
-                        log_warn("Filesystem Type for %s is NULL!", devnode);
-                        fs_type = "";
+                        log_error("Filesystem Type for %s is NULL!", devnode);
+                        udev_device_unref(dev);
                     }
 
                     char buffer[512];
@@ -105,7 +105,14 @@ void *ndm_udev_thread_usb(void *arg) {
 
                 } else if (action && strcmp(action, "remove") == 0) {
                     const char *devnode = udev_device_get_devnode(dev);
-                    MountEntry *entry   = ndm_mnt_get_entry_devnode(devnode);
+                    const char *devtype = udev_device_get_devtype(dev);
+
+                    if (!devtype || strcmp(devtype, "partition") != 0) {
+                        udev_device_unref(dev);
+                        continue;
+                    }
+
+                    MountEntry *entry = ndm_mnt_get_entry_devnode(devnode);
                     if (entry) {
                         log_info("Unmounted and removed USB device %s (was "
                                  "mounted at %s)",
@@ -205,12 +212,16 @@ int ndm_udev_mount_on_start() {
         }
 
         char buffer[256];
-        snprintf(buffer, sizeof(buffer), "/mnt/%d", i++);
 
+        if (is_usb == 1) {
+            snprintf(buffer, sizeof(buffer), "/mnt/usb%d", usb_counter++);
+        } else {
+            snprintf(buffer, sizeof(buffer), "/mnt/%d", i++);
+        }
         if (strcmp(fs_type, "ntfs") == 0) {
             fs_type = "ntfs-3g";
             char cmd_buf[512];
-            log_info("Mounting NTFS device %s on %s using ntfs-3g\n", devnode,
+            log_info("Mounted [NTFS] %s on %s (driver=ntfs-3g)\n", devnode,
                      buffer);
             snprintf(cmd_buf, sizeof(cmd_buf), "sudo ntfs-3g %s %s", devnode,
                      buffer);

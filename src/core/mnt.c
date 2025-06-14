@@ -30,7 +30,7 @@ int ndm_mnt_dev(const char *devnode, const char *fstype,
         return -2;
     }
 
-    log_info("Mounted %s on %s (fs=%s)\n", devnode, mountpoint, fstype);
+    log_info("Mounted %s on %s (fs=%s)", devnode, mountpoint, fstype);
 
     MountEntry *new_entry = malloc(sizeof(MountEntry));
     if (!new_entry) {
@@ -97,7 +97,7 @@ MountEntry *ndm_mnt_get_entry_devnode(const char *devnode) {
         }
         current = current->next;
     }
-    log_warn("Could not find Mount Entry with the devnode %s!", devnode);
+    log_warn("Could not find Mount Entry with the device node %s!", devnode);
     return NULL;
 }
 
@@ -109,7 +109,7 @@ MountEntry *ndm_mnt_get_entry_mountpoint(const char *mountpoint) {
         }
         current = current->next;
     }
-    log_warn("Could not find Mount Point with the mountpoint %s!", mountpoint);
+    log_warn("Could not find Mount Point with the path %s!", mountpoint);
     return NULL;
 }
 
